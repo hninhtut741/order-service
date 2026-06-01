@@ -1,0 +1,57 @@
+name: Build & Deploy — Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  dockr-build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build tag version
+        run: echo ::set-output name=version::$(echo ${{ github.run_number }}-${GITHUB_SHA::7})
+        id: tag-version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./deployment/Dockerfile.dev
+          push: true
+          tags: ghcr.io/zawthanoo/spring-rest-helloworld:${{ steps.tag-version.outputs.version }}
+
+      - name: Checkout Kustomize chart Repository
+        uses: actions/checkout@v3
+        with:
+          repository: zawthanoo/workshop-apps
+          path: temp_workspace
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Update image tag in dev overlay
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          repository: zawthanoo/workshop-apps
+          valueFile: order-service/overlays/dev/kustomization.yaml
+          branch: main
+          createPR: "false"
+          message: "order-service dev release ${{ steps.tag-version.outputs.version }}"
+          token: ${{ secrets.DEVOPS_TOKEN }}
+          workDir: deployment
+          changes: |
+            {
+              "images[0].newTag": "${{ steps.tag-version.outputs.version }}"
+            }
