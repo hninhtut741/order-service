@@ -36,19 +36,19 @@ jobs:
           file: ./deployment/Dockerfile.dev
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/zawthanoo/order-service:${{ steps.tag-version.outputs.version }}
+          tags: ghcr.io/hninhtut/order-service:${{ steps.tag-version.outputs.version }}
 
       - name: Checkout Kustomize chart Repository
         uses: actions/checkout@v3
         with:
-          repository: zawthanoo/workshop-apps
+          repository: hninhtut/workshop-apps
           path: deployment
           token: ${{ secrets.MY_GITHUB_TOKEN }}
 
       # - name: Update image tag in dev overlay
       #   uses: fjogeleit/yaml-update-action@main
       #   with:
-      #     repository: zawthanoo/workshop-apps
+      #     repository: hninhtut/workshop-apps
       #     valueFile: order-service/overlays/dev/kustomization.yaml
       #     branch: main
       #     createPR: "false"
